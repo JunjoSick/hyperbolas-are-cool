@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Epicenter Localization - Hyperbola Method</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 data-translate-key="title">🌍 Seismic Epicenter Localization</h1>
+            <p data-translate-key="subtitle">Interactive demonstration of the hyperbola method for earthquake epicenter identification</p>
+            <div class="language-switcher">
+                <button id="langEn" class="btn-lang active" data-lang="en">English</button>
+                <button id="langIt" class="btn-lang" data-lang="it">Italiano</button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="map-section">
+                <div class="map-controls">
+                    <div class="control-group">
+                        <button id="resetBtn" class="btn btn-secondary" data-translate-key="resetBtn">🔄 Reset Simulation</button>
+                        <div class="station-counter">
+                            <span data-translate-key="stationsLabel">Stations</span>: <span id="stationCount">0</span>/3
+                        </div>
+                    </div>
+                    <div class="instruction" data-translate-key="instructionInitial">
+                        Click on the map to place seismic stations (max 3)
+                    </div>
+                </div>
+                <div class="map-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="toggleThirdHyperbola">
+                        <span data-translate-key="toggleThirdHyperbola">Show 3rd Hyperbola (S2-S3)</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="toggleHyperbolaLabels">
+                        <span data-translate-key="toggleHyperbolaLabels">Show Hyperbola Station Labels</span>
+                    </label>
+                </div>
+                <div id="map" class="map-container"></div>
+                <div class="legend">
+                    <div class="legend-item">
+                      <div class="legend-color epicenter"></div>
+                      <span data-translate-key="legendEpicenter">True Epicenter / Intersection</span>
+                    </div>
+                    <div class="legend-item">
+                      <div class="legend-color station"></div>
+                      <span data-translate-key="legendStation">Seismic Station</span>
+                    </div>
+                    <div class="legend-item">
+                      <div class="legend-color circle"></div>
+                      <span data-translate-key="legendCircle">Distance Circle</span>
+                    </div>
+                    <div class="legend-item">
+                      <div class="legend-color" style="background: transparent; border: 2px dashed #e74c3c;"></div>
+                      <span data-translate-key="legendHyperbola">Hyperbola</span>
+                    </div>
+                  </div>
+            </div>
+
+            <div class="info-panel">
+                <div class="card">
+                    <h3 data-translate-key="seismicDataTitle">📊 Seismic Data</h3>
+                    <div id="seismicData" class="data-container">
+                        <p class="no-data" data-translate-key="seismicDataNoData">Place seismic stations on the map to begin localization and see data.</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 data-translate-key="localizationProgressTitle">🎯 Localization Progress</h3>
+                    <div id="localizationInfo" class="progress-container">
+                        <div class="progress-step">
+                            <div class="step-number">1</div>
+                            <div class="step-text" data-translate-key="progressStep1Initial">Place first station</div>
+                        </div>
+                        <div class="progress-step">
+                            <div class="step-number">2</div>
+                            <div class="step-text" data-translate-key="progressStep2Initial">Add second station</div>
+                        </div>
+                        <div class="progress-step">
+                            <div class="step-number">3</div>
+                            <div class="step-text" data-translate-key="progressStep3Initial">Triangulate with third station</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="explanation-section">
+            <div class="explanation-card">
+                <h2 data-translate-key="explanationTitle">🧮 How the Hyperbola Method Works</h2>
+                <div class="explanation-content">
+                    <div class="explanation-item">
+                        <h4 data-translate-key="explanationWaveDiffTitle">1. Wave Speed Difference</h4>
+                        <p data-translate-key="explanationWaveDiffP1">Earthquakes generate two main types of seismic waves:</p>
+                        <ul>
+                            <li data-translate-key="explanationWaveDiffLi1"><strong>P-waves</strong> (Primary): Faster, arrive first (~6-8 km/s)</li>
+                            <li data-translate-key="explanationWaveDiffLi2"><strong>S-waves</strong> (Secondary): Slower, arrive second (~3-4 km/s)</li>
+                        </ul>
+                    </div>
+                    <div class="explanation-item">
+                        <h4 data-translate-key="explanationTimeDistTitle">2. Time-Distance Relationship (Single Station)</h4>
+                        <p data-translate-key="explanationTimeDistP1">The time difference between P and S wave arrivals ( \( \text{t}_S - \text{t}_P \) ) at a station is proportional to the distance from the epicenter. This distance can be calculated using the P-wave velocity ( \( \text{v}_P \) ) and S-wave velocity ( \( \text{v}_S \) ):</p>
+                        <div class="formula">
+                            <code>distance = (t<sub>S</sub> - t<sub>P</sub>) × (v<sub>P</sub> × v<sub>S</sub>) / (v<sub>P</sub> - v<sub>S</sub>)</code>
+                        </div>
+                        <p data-translate-key="explanationTimeDistP2">With one station, this defines a circle of possible epicenter locations.</p>
+                    </div>
+                    <div class="explanation-item">
+                        <h4 data-translate-key="explanationHyperbolicTitle">3. Hyperbolic Triangulation</h4>
+                        <p data-translate-key="explanationHyperbolicP1">The hyperbola method uses the difference in arrival times of a specific seismic wave (e.g., P-wave, or the S-P difference itself) at pairs of stations.</p>
+                        <ul>
+                            <li data-translate-key="explanationHyperbolicLi1"><strong>1 station:</strong> (Using S-P time) Defines a circle of possible locations.</li>
+                            <li data-translate-key="explanationHyperbolicLi2"><strong>2 stations:</strong> The difference in arrival times of a wave at these two stations is constant for any point on a specific hyperbola. The stations act as foci. This defines one hyperbola.</li>
+                            <li data-translate-key="explanationHyperbolicLi3"><strong>3 stations:</strong> A third station allows the determination of a second, distinct hyperbola. The geometric intersection point of these two (or three) hyperbolas identifies the epicenter.</li>
+                        </ul>
+                    </div>
+                    <div class="explanation-item">
+                        <h4 data-translate-key="explanationRealWorldTitle">4. Real-World Application</h4>
+                        <p data-translate-key="explanationRealWorldP1">This method is fundamental to how seismological networks locate earthquakes. This simulation finds the <strong>epicenter</strong> (the point on the Earth's surface directly above the earthquake's origin). The actual 3D origin is called the <strong>hypocenter</strong>.</p>
+                        <p data-translate-key="explanationRealWorldP2">Real seismic data contains noise, and seismologists use many stations and advanced algorithms for precise, reliable locations. Visual intersections on maps can also be affected by map projection and drawing approximations.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
